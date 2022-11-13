@@ -19,3 +19,5 @@ Imports:
     mclust,
     Seurat,
     Signac
+URL: https://github.com/nickolas-chu/sxreveal
+BugReports: https://github.com/nickolas-chu/sxreveal/issues
