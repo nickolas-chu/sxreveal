@@ -1,4 +1,4 @@
-#' femaleProbability: probability based sex demultiplexing tool
+#' femaleProb: probability based sex demultiplexing tool
 #'
 #' Calculates the probability of cells/nuclei belonging to male or female subjects
 #' Returns a data frame with probabilitites based on 3 seperate models
@@ -9,16 +9,20 @@
 #' @param Seuratobj seurat object
 #' @param lognormalized boolean
 #' @param ONLINE boolean
+#' @param xistplots boolean
 #' @export
 #' @author Nickolas C. Chu
 
 
-femaleProbability <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE )
+femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE )
 {
   set.seed(1234)
-
+  nCount_RNA <- NULL
+  proportionF <- NULL
+  Xist <- NULL
   #make empty list
   Clusters <- list()
+  annotation<-NULL
 
   #for catching clusters with low numbers of Xist expressing cells
   badclusters<-0
@@ -85,7 +89,9 @@ femaleProbability <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE )
     #Produce density estimate for uni-variate and multi-variate
     if (NROW(newdata$Xist[newdata$Xist >= 2])){#do 2 or more cells have Xist?
       dens1 <- densityMclust(newdata$Xist, G = 2, plot = FALSE)#only Xist
-
+      #multivariate probabilities
+      dens3 <- densityMclust(newdata, G = 2, plot = FALSE)#Xist, ygenes, and rna count
+      dens2 <- densityMclust(newdata[,c('Xist','Ygenes')], G = 2, plot = FALSE)#Xist and ygenes
       #Add density estimate object to a growing list and store cluster number
 
       plot_list0[[i-badclusters]]<- dens1
@@ -117,9 +123,7 @@ femaleProbability <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE )
       }else{
         colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
       }
-      #multivariate probabilities
-      dens3 <- densityMclust(newdata, G = 2, plot = FALSE)#Xist, ygenes, and rna count
-      dens2 <- densityMclust(newdata[,c('Xist','Ygenes')], G = 2, plot = FALSE)#Xist and ygenes
+
 
       newdata[['Prob.Multi.1']] <- dens2$z[,1]
       newdata[['Prob.Multi.2']] <- dens2$z[,2]
@@ -201,72 +205,74 @@ femaleProbability <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE )
 
   }
   #Create PDF for the change in female proportion with increasing rna count, per cluster
-  print(truelabels)
-  pdf(file = 'Proportion_Expressing_Xist.pdf')
-  plot_list1 = list()
-  noxist = 0
-  for (N in 1:length(Clusters)){
-    tempclust = Clusters[[N]]
-    if(NROW(tempclust$Xist[tempclust$Xist >= 2])){
-      hasxist<- N - noxist
-      colnames(tempclust)[10] <- 'proportionF'
-      p1 = ggplot(tempclust, aes(x = nCount_RNA, y = proportionF))+
-        geom_point()+
+  if (xistplots == TRUE){
+    print(truelabels)
+    pdf(file = 'Proportion_Expressing_Xist.pdf')
+    plot_list1 = list()
+    noxist = 0
+    for (N in 1:length(Clusters)){
+      tempclust = Clusters[[N]]
+      if(NROW(tempclust$Xist[tempclust$Xist >= 2])){
+        hasxist<- N - noxist
+        colnames(tempclust)[10] <- 'proportionF'
+        p1 = ggplot(tempclust, aes(x = nCount_RNA, y = proportionF))+
+          geom_point()+
+          ggtitle(paste0("Cluster", truelabels[N]))
+        plot_list1[[hasxist]] = p1
+      }else{
+        noxist <- noxist + 1
+      }
+    }
+    for (i in 1:length(plot_list1)) {
+      print(plot_list1[[i]])
+    }
+    dev.off()
+    #create a list of histograms for Xist expression per cluster
+    plot_list2 = list()
+    for (N in 1:length(Clusters)){
+      tempclust = Clusters[[N]]
+      colnames(tempclust)[1] <- 'Xist'
+      p2 = ggplot(tempclust, aes(x=Xist)) +
+        geom_histogram(binwidth = 0.05) +
+        #xlim(-1,NA)+
+        #scale_x_continuous(limits = c(0,NA))+
+        #scale_y_continuous()+
         ggtitle(paste0("Cluster", truelabels[N]))
-      plot_list1[[hasxist]] = p1
-    }else{
-      noxist <- noxist + 1
+      plot_list2[[N]] = p2
+
     }
-  }
-  for (i in 1:length(plot_list1)) {
-    print(plot_list1[[i]])
-  }
-  dev.off()
-  #create a list of histograms for Xist expression per cluster
-  plot_list2 = list()
-  for (N in 1:length(Clusters)){
-    tempclust = Clusters[[N]]
-    colnames(tempclust)[1] <- 'Xist'
-    p2 = ggplot(tempclust, aes(x=Xist)) +
-      geom_histogram(binwidth = 0.05) +
-      #xlim(-1,NA)+
-      #scale_x_continuous(limits = c(0,NA))+
-      #scale_y_continuous()+
-      ggtitle(paste0("Cluster", truelabels[N]))
-    plot_list2[[N]] = p2
-
-  }
-  #create a PDF for the histograms for each cluster
-  pdf(file = 'Xist_hist.pdf')
-  for (i in 1:length(plot_list2)) {
-    print(plot_list2[[i]])
-  }
-  dev.off()
-  #Get number of clusters minus clusters with 2 < Xist expressing cells
-  goodclusters<-  length(plot_list2) - badclusters
-  #print PDF combining the ordered Xist expression proportions and Xist histograms
-  pdf(file = 'combined.pdf')
-  for(i in 1:goodclusters){
-    current = plot_list0_titles[[i]]
-    VAR1=plot_list0[[i]]
-    VAR2=plot_list1[[i]]
-
-    if(lognormalized == TRUE){
-      bin_width <-0.05
+    #create a PDF for the histograms for each cluster
+    pdf(file = 'Xist_hist.pdf')
+    for (i in 1:length(plot_list2)) {
+      print(plot_list2[[i]])
     }
-    else{
-      bin_width <- 0.5
+    dev.off()
+    #Get number of clusters minus clusters with 2 < Xist expressing cells
+    goodclusters<-  length(plot_list2) - badclusters
+    #print PDF combining the ordered Xist expression proportions and Xist histograms
+    pdf(file = 'combined.pdf')
+    for(i in 1:goodclusters){
+      current = plot_list0_titles[[i]]
+      VAR1=plot_list0[[i]]
+      VAR2=plot_list1[[i]]
+
+      if(lognormalized == TRUE){
+        bin_width <-0.05
+      }
+      else{
+        bin_width <- 0.5
+      }
+
+      nbins <- seq(min(VAR1$data) - bin_width,
+                   max(VAR1$data) + bin_width,
+                   by = bin_width)
+
+      plot(VAR2)
+      plot(VAR1, what = "density", data =  VAR1$data, breaks = nbins , main = paste("Cluster", current, sep = " "), xlab = 'Xist' )
+
     }
-
-    nbins <- seq(min(VAR1$data) - bin_width,
-                 max(VAR1$data) + bin_width,
-                 by = bin_width)
-
-    plot(VAR2)
-    plot(VAR1, what = "density", data =  VAR1$data, breaks = nbins , main = paste("Cluster", current, sep = " "), xlab = 'Xist' )
-
+    dev.off()
   }
-  dev.off()
   names(Clusters) <- truelabels
   merged <- bind_rows(Clusters, .id = "cluster")
   Clusters <- merged[rownames(Seuratobj@meta.data), ]

@@ -1,4 +1,4 @@
-#' addProbs: Sex assigning function
+#' sexAssign: Sex assigning function
 #'
 #' Used to assign sex to each cell based on probability of being female
 #' Default cutoffs:
@@ -11,12 +11,12 @@
 #' @param malecut selected probability of being female used to assign males
 #' @export
 #' @author Nickolas C. Chu
-addProbs <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
+sexAssign <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
 {
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleMulti[i] >= 0.8) {
+    if (Probabilities$ProbFemaleMulti[i] >= femalecut) {
       Probabilities[['SexMulti']][i] <- "female"
-    }else if(Probabilities$ProbFemaleMulti[i] <= 0.2) {
+    }else if(Probabilities$ProbFemaleMulti[i] <= malecut) {
       Probabilities[['SexMulti']][i] <- "male"
     }else {
       Probabilities[['SexMulti']][i] <- "soup"
@@ -24,9 +24,9 @@ addProbs <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
   }
   #uni
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleUni[i] >= 0.8) {
+    if (Probabilities$ProbFemaleUni[i] >= femalecut) {
       Probabilities[['SexUni']][i] <- "female"
-    }else if(Probabilities$ProbFemaleUni[i] <= 0.2) {
+    }else if(Probabilities$ProbFemaleUni[i] <= malecut) {
       Probabilities[['SexUni']][i] <- "male"
     }else {
       Probabilities[['SexUni']][i] <- "soup"
@@ -34,9 +34,9 @@ addProbs <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
   }
   #multincount
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleMultinCount[i] >= 0.8) {
+    if (Probabilities$ProbFemaleMultinCount[i] >= femalecut) {
       Probabilities[['SexMultinCount']][i] <- "female"
-    }else if(Probabilities$ProbFemaleMultinCount[i] <= 0.2) {
+    }else if(Probabilities$ProbFemaleMultinCount[i] <= malecut) {
       Probabilities[['SexMultinCount']][i] <- "male"
     }else {
       Probabilities[['SexMultinCount']][i] <- "soup"

@@ -4,9 +4,17 @@
 \name{sxreveal-package}
 \alias{sxreveal}
 \alias{sxreveal-package}
-\title{sxreveal: What the Package Does (One Line, Title Case)}
+\title{sxreveal: A toolkit for demultiplexing single nuclei RNA sequencing samples by sex}
 \description{
-What the package does (one paragraph).
+This package is intended to be used to identify the sample a cell originated from, where cells from a male and female organism were mixed before 10X single nuclei sequencing. Sex assignment of cells are based on probabilities from density estimation using a Gaussian finite mixture model. This package was developed to take a Seurat object post dimensional reduction clustering as input.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/nickolas-chu/sxreveal}
+  \item Report bugs at \url{https://github.com/nickolas-chu/sxreveal/issues}
+}
+
 }
 \author{
 Nickolas C. Chu
