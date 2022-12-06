@@ -23,12 +23,13 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   #make empty list
   Clusters <- list()
   annotation<-NULL
+  enoughxist <- TRUE
 
   #for catching clusters with low numbers of Xist expressing cells
   badclusters<-0
 
   #get number of clusters and Xist expression for all cells
-  levels <- as.data.frame(unique(Seuratobj@active.ident))
+  levels <- as.data.frame(as.numeric(as.character(unique(Seuratobj@active.ident))))
   if (lognormalized == TRUE){
     xist.exp <-FetchData(Seuratobj, "Xist")
   }else{
@@ -61,6 +62,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   plot_list0_titles = list()
 
   #Main loop function loops for the number of unique identities in the dataframe
+
   previous <- 0
   current <- -1
   for (i in 1:nrow(levels)) {
@@ -70,7 +72,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
 
     #Checks for presence of cells belonging to cluster being checked.
     #If found subsets that cluster from the dataframe, otherwise checks next
-    for (m in 1:nrow(levels)) {
+    for (m in 1:max(levels)) {
 
       if (any (data2$seurat_clusters == current) ){
         newdata <- subset(data2, select = c("Xist", "Ygenes", "nCount_RNA"), data2$seurat_clusters == current )
@@ -87,7 +89,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     }
 
     #Produce density estimate for uni-variate and multi-variate
-    if (NROW(newdata$Xist[newdata$Xist >= 2])){#do 2 or more cells have Xist?
+    if (NROW(newdata$Xist[newdata$Xist >= 2])){
       dens1 <- densityMclust(newdata$Xist, G = 2, plot = FALSE)#only Xist
       #multivariate probabilities
       dens3 <- densityMclust(newdata, G = 2, plot = FALSE)#Xist, ygenes, and rna count
@@ -99,18 +101,45 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       #Add probability of each class per cell to the dataframe that will be output
       newdata[['Prob.Uni.1']] <- dens1$z[,1]
       newdata[['Prob.Uni.2']] <- dens1$z[,2]
+    }else{
+      print(paste("less than 2 cells express Xist in cluster", current))
+    }
+    #not clear how mclust chooses to lable each class as 1 or 2, they can switch.
+    #So to label the probabilities I use the correlation between probability and
+    #Xist expression
+    enoughxist <- TRUE
+    #determine correlation of Xist expression to probability
+    stat1 <- tryCatch(
+      {stat1<- cor.test(newdata$Xist, newdata$Prob.Uni.1)
+      },
+      error=function(e) {
+        message('An Error Occurred, check number of Xist expressing cells')
+        print(e)
+        enoughxist <- FALSE
+        return(enoughxist)
 
-      #not clear how mclust chooses to lable each class as 1 or 2, they can switch.
-      #So to label the probabilities I use the correlation between probability and
-      #Xist expression
+      }
+    )
+    stat2 <- tryCatch(
+      {stat2<- cor.test(newdata$Xist, newdata$Prob.Uni.2)
+      },
+      error=function(e) {
+        message('An Error Occurred, check number of Xist expressing cells')
+        print(e)
+        enoughxist <- FALSE
+        return(enoughxist)
 
-      #determine correlation of Xist expression to probability
-      stat1<- cor.test(newdata$Xist, newdata$Prob.Uni.1)
-      stat2<- cor.test(newdata$Xist, newdata$Prob.Uni.2)
+      }
+    )
+    if (is.logical(stat1) || is.logical(stat2)){
+      enoughxist <- FALSE
+    }
+    print(enoughxist)
 
+    if (enoughxist == TRUE) {
       #A positive correlation indicates the probability is for being female,
       #negative is male
-
+      print(paste("there is enough Xist in cluster:", current))
       #univariate probabilities
       if (stat1$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
@@ -123,7 +152,6 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       }else{
         colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
       }
-
 
       newdata[['Prob.Multi.1']] <- dens2$z[,1]
       newdata[['Prob.Multi.2']] <- dens2$z[,2]
@@ -159,7 +187,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
       }
 
-    }else{#if less than 2 cells have Xist then for that cluster fill all columns with 0
+    }else{#fill all columns with 0
       newdata[['Prob.Uni.1']] <- 0
       newdata[['Prob.Uni.2']] <- 0
       colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
@@ -173,7 +201,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbFemaleMultinCount"
       badclusters<-badclusters + 1
-      print('less than 2 cells have xist')
+      print('not enough cells have xist')
     }
 
 
