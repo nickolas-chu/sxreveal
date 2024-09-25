@@ -2,7 +2,7 @@
 #'
 #' Calculates the probability of cells/nuclei belonging to male or female subjects
 #' Returns a data frame with probabilitites based on 3 seperate models
-#' Univariate mode,l dependent on Xist expression
+#' Univariate model, dependent on Xist expression
 #' Multivariate model, dependent on Xist and the sum of Y chromosome genes
 #' Multivariate + nCount, same as above and including unique RNA counts
 #'
