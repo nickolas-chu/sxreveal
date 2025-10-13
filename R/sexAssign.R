@@ -14,6 +14,17 @@
 sexAssign <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
 {
   for (i in 1:nrow(Probabilities)) {
+    if (Probabilities$ProbFemaleXY[i] >= femalecut) {
+      Probabilities[["SexMultiXY"]][i] <- "female"
+    }
+    else if (Probabilities$ProbFemaleXY[i] <= malecut) {
+      Probabilities[["SexMultiXY"]][i] <- "male"
+    }
+    else {
+      Probabilities[["SexMultiXY"]][i] <- "soup"
+    }
+  }
+  for (i in 1:nrow(Probabilities)) {
     if (Probabilities$ProbFemaleMulti[i] >= femalecut) {
       Probabilities[['SexMulti']][i] <- "female"
     }else if(Probabilities$ProbFemaleMulti[i] <= malecut) {
