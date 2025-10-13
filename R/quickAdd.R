@@ -11,6 +11,7 @@
 quickAdd <- function(Probabilities, Seuratobj )
 {
   Seuratobj[["Ygenes2"]] <- Probabilities$Ygenes
+  Seuratobj[["Xgenes2"]] <- Probabilities$Xgenes
   Seuratobj[["Xist2"]] <- Probabilities$Xist
   Seuratobj[["ProbUni"]] <- Probabilities$ProbFemaleUni
   Seuratobj[["SexUni"]] <- Probabilities$SexUni
