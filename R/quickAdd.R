@@ -18,6 +18,8 @@ quickAdd <- function(Probabilities, Seuratobj )
   Seuratobj[["SexMulti"]] <- Probabilities$SexMulti
   Seuratobj[["ProbMultinCount"]] <- Probabilities$ProbFemaleMultinCount
   Seuratobj[["SexMultinCount"]] <- Probabilities$SexMultinCount
+  Seuratobj[["ProbMultiXY"]] <- Probabilities$ProbFemaleXY
+  Seuratobj[["SexMultiXY"]] <- Probabilities$SexMultiXY
 
   return(Seuratobj)
 
