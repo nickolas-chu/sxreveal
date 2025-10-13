@@ -20,6 +20,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   nCount_RNA <- NULL
   proportionF <- NULL
   Xist <- NULL
+  Tsix <- NULL
   #make empty list
   Clusters <- list()
   annotation<-NULL
@@ -33,13 +34,16 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   levels <- as.data.frame(as.numeric(as.character(unique(Seuratobj@active.ident))))
   if (lognormalized == TRUE){
     xist.exp <-FetchData(Seuratobj, "Xist")
+    tsix.exp <- FetchData(Seuratobj, "Tsix")
   }else{
     xist.exp <- expm1(FetchData(Seuratobj, "Xist"))
+    tsix.exp <- expm1(FetchData(Seuratobj, "Tsix"))
   }
   
   #sum up expression of all y chromosome genes. Unless ONLINE == FALSE, in this
   #case select genes will be used.
   data2 <- xist.exp
+  data2[["Tsix"]] <- tsix.exp$Tsix
   
   if(seurat_version >= 5){
     if(ONLINE == TRUE){
@@ -71,6 +75,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   
   #make a dataframe that has Xist, Ygenes, and cluster number
   data2[,"Ygenes"] <- Ygenes
+  data2$Xgenes<- data2$Tsix + data2$Xist
   data2[,"seurat_clusters"] <- Seuratobj@active.ident
   data2[['nCount_RNA']] <- Seuratobj$nCount_RNA
   
@@ -93,7 +98,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     for (m in 1:max(levels)) {
       
       if (any (data2$seurat_clusters == current) ){
-        newdata <- subset(data2, select = c("Xist", "Ygenes", "nCount_RNA"), data2$seurat_clusters == current )
+        newdata <- subset(data2, select = c("Xist", "Ygenes","Xgenes", "nCount_RNA"), data2$seurat_clusters == current )
         print("found")
         truelabels[i] <- current
         
@@ -107,11 +112,14 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     }
     
     #Produce density estimate for uni-variate and multi-variate
-    if (NROW(newdata$Xist[newdata$Xist >= 2])){
+    if (NROW(newdata$Xist[newdata$Xist > 0]) >= 2) {
       dens1 <- densityMclust(newdata$Xist, G = 2, plot = FALSE)#only Xist
       #multivariate probabilities
-      dens3 <- densityMclust(newdata, G = 2, plot = FALSE)#Xist, ygenes, and rna count
+      dens3 <- densityMclust(newdata[,c('Xist','Ygenes', 'nCount_RNA')], G = 2, plot = FALSE)#Xist, ygenes, and rna count
       dens2 <- densityMclust(newdata[,c('Xist','Ygenes')], G = 2, plot = FALSE)#Xist and ygenes
+
+      dens4 <- densityMclust(newdata[, c("Xgenes", "Ygenes")],
+                             G = 2, plot = FALSE)
       #Add density estimate object to a growing list and store cluster number
       
       plot_list0[[i-badclusters]]<- dens1
@@ -175,11 +183,15 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       newdata[['Prob.Multi.2']] <- dens2$z[,2]
       newdata[['Prob.Multi.ncount.1']] <- dens3$z[,1]
       newdata[['Prob.Multi.ncount.2']] <- dens3$z[,2]
+      newdata[["Prob.XY.1"]] <- dens4$z[, 1]
+      newdata[["Prob.XY.2"]] <- dens4$z[, 2]
       
       stat3<- cor.test(newdata$Xist, newdata$Prob.Multi.1)
       stat4<- cor.test(newdata$Xist, newdata$Prob.Multi.2)
       stat5<- cor.test(newdata$Xist, newdata$Prob.Multi.ncount.1)
       stat6<- cor.test(newdata$Xist, newdata$Prob.Multi.ncount.2)
+      stat7 <- cor.test(newdata$Xist, newdata$Prob.XY.1)
+      stat8 <- cor.test(newdata$Xist, newdata$Prob.XY.2)
       
       if (stat3$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
@@ -204,7 +216,18 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       }else{
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
       }
-      
+      if (stat7$estimate > 0) {
+        colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
+      }
+      else {
+        colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbMaleXY"
+      }
+      if (stat8$estimate > 0) {
+        colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbFemaleXY"
+      }
+      else {
+        colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
+      }
     }else{#fill all columns with 0
       newdata[['Prob.Uni.1']] <- 0
       newdata[['Prob.Uni.2']] <- 0
@@ -214,10 +237,14 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       newdata[['Prob.Multi.2']] <- 0
       newdata[['Prob.Multi.ncount.1']] <- 0
       newdata[['Prob.Multi.ncount.2']] <- 0
+      newdata[["Prob.XY.1"]] <- 0
+      newdata[["Prob.XY.2"]] <- 0
       colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbFemaleMultinCount"
+      colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
+      colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       badclusters<-badclusters + 1
       print('not enough cells have xist')
     }
