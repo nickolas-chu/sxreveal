@@ -1,6 +1,6 @@
 Package: sxreveal
 Title: A toolkit for demultiplexing single nuclei RNA sequencing samples by sex 
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: 
     person("Nickolas", "Chu", , "nclchu@ucdavis.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9860-7788"))
