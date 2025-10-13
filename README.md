@@ -1,7 +1,7 @@
 # sxreveal
 A toolkit for demultiplexing single nuclei RNA sequencing samples by sex 
 Create a Seurat object from your data set, following tutorial steps until you have clusters (https://satijalab.org/seurat/articles/pbmc3k_tutorial.html#run-non-linear-dimensional-reduction-umap-tsne-)
-Make sure the default assay is set to RNA and the active identities are set to the cluster numbers.
+Make sure the desired assay for making predictions as default and active identities are set to the cluster numbers.
 
 Use:
 
