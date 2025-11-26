@@ -9,6 +9,7 @@
 #' @import BSgenome.Mmusculus.UCSC.mm10
 #' @import GenomicRanges
 #' @import GenomeInfoDb
+#' @import R.utils
 #' @importFrom stats cor.test
 #' @importFrom grDevices pdf
 #' @importFrom grDevices dev.off
