@@ -325,7 +325,8 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       ordered$proportionF[[k]] = proportion
     }
     #add ordered dataframe into a list of dataframes. A dataframe per cluster
-    Clusters <- append(Clusters, list(ordered),i)
+    Clusters[[as.character(current)]] <- ordered
+
     
   }
   #Create PDF for the change in female proportion with increasing rna count, per cluster
@@ -397,7 +398,6 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     }
     dev.off()
   }
-  names(Clusters) <- truelabels
   merged <- bind_rows(Clusters, .id = "cluster")
   Clusters <- merged[rownames(Seuratobj@meta.data), ]
   
