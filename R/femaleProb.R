@@ -1,20 +1,22 @@
 #' femaleProb: probability based sex demultiplexing tool
 #'
 #' Calculates the probability of cells/nuclei belonging to male or female subjects
-#' Returns a data frame with probabilitites based on 3 seperate models
+#' Returns a data frame with probabilitites based on 4 seperate models
 #' Univariate model, dependent on Xist expression
 #' Multivariate model, dependent on Xist and the sum of Y chromosome genes
-#' Multivariate + nCount, same as above and including unique RNA counts
+#' Xist + Ychrom genes + nCount, same as above and including unique RNA counts
+#' Xchrom + Ychrom genes, dependent on sum of Xist and Tsix  vs the sum of Y chromosome genes
 #'
 #' @param Seuratobj seurat object
 #' @param lognormalized boolean
 #' @param ONLINE boolean
 #' @param xistplots boolean
+#' @param timeout int
 #' @export
 #' @author Nickolas C. Chu
 
 
-femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE )
+femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, timeout = 10 )
 {
   set.seed(1234)
   nCount_RNA <- NULL
@@ -101,7 +103,14 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         newdata <- subset(data2, select = c("Xist", "Ygenes","Xgenes", "nCount_RNA"), data2$seurat_clusters == current )
         print("found")
         truelabels[i] <- current
-        
+        if (nrow(newdata) < 5) {
+          message("Skipping cluster ", current, " (<5 cells)")
+          next
+        }
+        if (n_distinct(newdata$Xist) == 1) {
+          message("Skipping cluster ", current, " (Xist constant)")
+          next
+        }
         break
       }else{
         print('not found')
@@ -113,20 +122,52 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     
     #Produce density estimate for uni-variate and multi-variate
     if (NROW(newdata$Xist[newdata$Xist > 0]) >= 2) {
-      dens1 <- densityMclust(newdata$Xist, G = 2, plot = FALSE)#only Xist
-      #multivariate probabilities
-      dens3 <- densityMclust(newdata[,c('Xist','Ygenes', 'nCount_RNA')], G = 2, plot = FALSE)#Xist, ygenes, and rna count
-      dens2 <- densityMclust(newdata[,c('Xist','Ygenes')], G = 2, plot = FALSE)#Xist and ygenes
+      dens1 <- tryCatch({
+        withTimeout({
+          densityMclust(newdata$Xist, G = 2, plot = FALSE)
+        }, timeout = timeout, onTimeout = "error")
+      }, error = function(e) {
+        message("Cluster ", current, ": dens1 failed - ", e$message)
+        NULL
+      })#only Xist probabilities
 
-      dens4 <- densityMclust(newdata[, c("Xgenes", "Ygenes")],
-                             G = 2, plot = FALSE)
-      #Add density estimate object to a growing list and store cluster number
       
-      plot_list0[[i-badclusters]]<- dens1
-      plot_list0_titles[[i-badclusters]]<- current
-      #Add probability of each class per cell to the dataframe that will be output
-      newdata[['Prob.Uni.1']] <- dens1$z[,1]
-      newdata[['Prob.Uni.2']] <- dens1$z[,2]
+      dens3 <- tryCatch({
+        withTimeout({
+          densityMclust(newdata[,c("Xist","Ygenes","nCount_RNA")], G = 2, plot = FALSE)
+        }, timeout = timeout, onTimeout = "error")
+      }, error = function(e) {
+        message("Cluster ", current, ": dens3 failed - ", e$message)
+        NULL
+      })#Xist, ygenes, and rna count
+      
+      dens2 <- tryCatch({
+        withTimeout({
+          densityMclust(newdata[,c("Xist","Ygenes")], G = 2, plot = FALSE)
+        }, timeout = timeout, onTimeout = "error")
+      }, error = function(e) {
+        message("Cluster ", current, ": dens2 failed - ", e$message)
+        NULL
+      })#Xist and ygenes
+
+      dens4 <- tryCatch({
+        withTimeout({
+          densityMclust(newdata[,c("Xgenes","Ygenes")], G = 2, plot = FALSE)
+        }, timeout = timeout, onTimeout = "error")
+      }, error = function(e) {
+        message("Cluster ", current, ": dens4 failed - ", e$message)
+        NULL
+      })
+      #Add density estimate object to a growing list and store cluster number
+      # Only proceed if dens1 succeeded
+      if (!is.null(dens1)) {
+        plot_list0[[i-badclusters]] <- dens1
+        plot_list0_titles[[i-badclusters]] <- current
+        newdata[["Prob.Uni.1"]] <- dens1$z[,1]
+        newdata[["Prob.Uni.2"]] <- dens1$z[,2]
+      } else {
+        next
+      }
     }else{
       print(paste("less than 2 cells express Xist in cluster", current))
     }
@@ -179,53 +220,63 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
       }
       
-      newdata[['Prob.Multi.1']] <- dens2$z[,1]
-      newdata[['Prob.Multi.2']] <- dens2$z[,2]
-      newdata[['Prob.Multi.ncount.1']] <- dens3$z[,1]
-      newdata[['Prob.Multi.ncount.2']] <- dens3$z[,2]
-      newdata[["Prob.XY.1"]] <- dens4$z[, 1]
-      newdata[["Prob.XY.2"]] <- dens4$z[, 2]
+      if (!is.null(dens2)) {
+        newdata[['Prob.Multi.1']] <- dens2$z[,1]
+        newdata[['Prob.Multi.2']] <- dens2$z[,2]
+      } else {
+        newdata[['Prob.Multi.1']] <- 0
+        newdata[['Prob.Multi.2']] <- 0
+      }
+      if (!is.null(dens3)) {
+        newdata[['Prob.Multi.ncount.1']] <- dens3$z[,1]
+        newdata[['Prob.Multi.ncount.2']] <- dens3$z[,2]
+      } else {
+        newdata[['Prob.Multi.ncount.1']] <- 0
+        newdata[['Prob.Multi.ncount.2']] <- 0
+      }
+        if (!is.null(dens4)) {
+        newdata[["Prob.XY.1"]] <- dens4$z[,1]
+        newdata[["Prob.XY.2"]] <- dens4$z[,2]
+      } else {
+        newdata[["Prob.XY.1"]] <- 0
+        newdata[["Prob.XY.2"]] <- 0
+      }
       
-      stat3<- cor.test(newdata$Xist, newdata$Prob.Multi.1)
-      stat4<- cor.test(newdata$Xist, newdata$Prob.Multi.2)
-      stat5<- cor.test(newdata$Xist, newdata$Prob.Multi.ncount.1)
-      stat6<- cor.test(newdata$Xist, newdata$Prob.Multi.ncount.2)
-      stat7 <- cor.test(newdata$Xist, newdata$Prob.XY.1)
-      stat8 <- cor.test(newdata$Xist, newdata$Prob.XY.2)
+      stat3 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.1), error=function(e) NULL)
+      stat4 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.2), error=function(e) NULL)
+      stat5 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.ncount.1), error=function(e) NULL)
+      stat6 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.ncount.2), error=function(e) NULL)
+      stat7 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.XY.1), error=function(e) NULL)
+      stat8 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.XY.2), error=function(e) NULL)
       
-      if (stat3$estimate > 0){
+      if (!is.null(stat3) && stat3$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
-      }else{
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbMaleMulti"
       }
-      
-      if (stat4$estimate > 0){
+      if (!is.null(stat4) && stat4$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbFemaleMulti"
-      }else{
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
       }
-      
-      if (stat5$estimate > 0){
+      if (!is.null(stat5) && stat5$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
-      }else{
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbMaleMultinCount"
       }
-      
-      if (stat6$estimate > 0){
+      if (!is.null(stat6) && stat6$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbFemaleMultinCount"
-      }else{
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
       }
-      if (stat7$estimate > 0) {
+      if (!is.null(stat7) && stat7$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
-      }
-      else {
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbMaleXY"
       }
-      if (stat8$estimate > 0) {
+      if (!is.null(stat8) && stat8$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbFemaleXY"
-      }
-      else {
+      } else {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
     }else{#fill all columns with 0
@@ -246,7 +297,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
       colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       badclusters<-badclusters + 1
-      print('not enough cells have xist')
+      print('not enough cells have xist or fits failed')
     }
     
     
@@ -262,16 +313,12 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     #where any cell expressing Xist is considered female. Can change this later
     for (k in 1:length(newdata$Xist)){
       cell = ordered$Xist[k]
-      
       if (cell > 0 ){
         female = female + 1
       }else{
-        
       }
-      
       proportion = female/k
       ordered$proportionF[[k]] = proportion
-      
     }
     #add ordered dataframe into a list of dataframes. A dataframe per cluster
     Clusters <- append(Clusters, list(ordered),i)
