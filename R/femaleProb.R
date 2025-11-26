@@ -21,7 +21,7 @@
 
 
 
-femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, timeout = 10 )
+femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, itmax = 100 )
 {
   set.seed(1234)
   nCount_RNA <- NULL
@@ -124,45 +124,44 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       }
       
     }
+
     
     #Produce density estimate for uni-variate and multi-variate
+
     if (NROW(newdata$Xist[newdata$Xist > 0]) >= 2) {
       dens1 <- tryCatch({
-        withTimeout({
-          densityMclust(newdata$Xist, G = 2, plot = FALSE)
-        }, timeout = timeout, onTimeout = "error")
+        densityMclust(newdata$Xist, G = 2, plot = FALSE,
+                      control = emControl(itmax = itmax))
       }, error = function(e) {
         message("Cluster ", current, ": dens1 failed - ", e$message)
         NULL
-      })#only Xist probabilities
-
-      
+      }) # only Xist probabilities
+    
       dens3 <- tryCatch({
-        withTimeout({
-          densityMclust(newdata[,c("Xist","Ygenes","nCount_RNA")], G = 2, plot = FALSE)
-        }, timeout = timeout, onTimeout = "error")
+        densityMclust(newdata[,c("Xist","Ygenes","nCount_RNA")], G = 2, plot = FALSE,
+                      control = emControl(itmax = itmax))
       }, error = function(e) {
         message("Cluster ", current, ": dens3 failed - ", e$message)
         NULL
-      })#Xist, ygenes, and rna count
-      
+      }) # Xist, ygenes, and rna count
+    
       dens2 <- tryCatch({
-        withTimeout({
-          densityMclust(newdata[,c("Xist","Ygenes")], G = 2, plot = FALSE)
-        }, timeout = timeout, onTimeout = "error")
+        densityMclust(newdata[,c("Xist","Ygenes")], G = 2, plot = FALSE,
+                      control = emControl(itmax = itmax))
       }, error = function(e) {
         message("Cluster ", current, ": dens2 failed - ", e$message)
         NULL
-      })#Xist and ygenes
-
+      }) # Xist and ygenes
+    
       dens4 <- tryCatch({
-        withTimeout({
-          densityMclust(newdata[,c("Xgenes","Ygenes")], G = 2, plot = FALSE)
-        }, timeout = timeout, onTimeout = "error")
+        densityMclust(newdata[,c("Xgenes","Ygenes")], G = 2, plot = FALSE,
+                      control = emControl(itmax = itmax))
       }, error = function(e) {
         message("Cluster ", current, ": dens4 failed - ", e$message)
         NULL
       })
+
+    
       #Add density estimate object to a growing list and store cluster number
       # Only proceed if dens1 succeeded
       if (!is.null(dens1)) {
