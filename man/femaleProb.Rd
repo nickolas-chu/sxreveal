@@ -4,7 +4,7 @@
 \alias{femaleProb}
 \title{femaleProb: probability based sex demultiplexing tool}
 \usage{
-femaleProb(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, timeout = 10)
+femaleProb(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, itmax = 100)
 }
 \arguments{
   \item{Seuratobj}{Seurat object}
