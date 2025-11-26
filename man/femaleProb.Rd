@@ -4,23 +4,24 @@
 \alias{femaleProb}
 \title{femaleProb: probability based sex demultiplexing tool}
 \usage{
-femaleProb(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE)
+femaleProb(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, timeout = 10)
 }
 \arguments{
-\item{Seuratobj}{seurat object}
-
-\item{lognormalized}{boolean}
-
-\item{ONLINE}{boolean}
-
-\item{xistplots}{boolean}
+  \item{Seuratobj}{Seurat object}
+  \item{lognormalized}{boolean, whether input data is log-normalized}
+  \item{ONLINE}{boolean, whether to fetch Y chromosome genes online from EnsDb}
+  \item{xistplots}{boolean, whether to generate diagnostic plots}
+  \item{timeout}{integer, maximum seconds allowed for densityMclust fitting before skipping}
 }
 \description{
-Calculates the probability of cells/nuclei belonging to male or female subjects
-Returns a data frame with probabilitites based on 3 seperate models
-Univariate mode,l dependent on Xist expression
-Multivariate model, dependent on Xist and the sum of Y chromosome genes
-Multivariate + nCount, same as above and including unique RNA counts
+Calculates the probability of cells/nuclei belonging to male or female subjects.
+Returns a data frame with probabilities based on 4 separate models:
+\itemize{
+  \item Univariate model, dependent on Xist expression
+  \item Multivariate model, dependent on Xist and the sum of Y chromosome genes
+  \item Multivariate + nCount, same as above and including unique RNA counts
+  \item Xchrom + Ychrom genes, dependent on sum of Xist and Tsix vs the sum of Y chromosome genes
+}
 }
 \author{
 Nickolas C. Chu
