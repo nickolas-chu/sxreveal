@@ -1,19 +1,24 @@
 #' femaleProb: probability based sex demultiplexing tool
 #'
-#' Calculates the probability of cells/nuclei belonging to male or female subjects
-#' Returns a data frame with probabilitites based on 4 seperate models
-#' Univariate model, dependent on Xist expression
-#' Multivariate model, dependent on Xist and the sum of Y chromosome genes
-#' Xist + Ychrom genes + nCount, same as above and including unique RNA counts
-#' Xchrom + Ychrom genes, dependent on sum of Xist and Tsix  vs the sum of Y chromosome genes
+#' Calculates the probability of cells/nuclei belonging to male or female subjects.
+#' Returns a data frame with probabilities based on 4 separate models:
+#' \itemize{
+#'   \item Univariate model, dependent on Xist expression
+#'   \item Multivariate model, dependent on Xist and the sum of Y chromosome genes
+#'   \item Multivariate + nCount, same as above and including unique RNA counts
+#'   \item Xchrom + Ychrom genes, dependent on sum of Xist and Tsix vs the sum of Y chromosome genes
+#' }
 #'
-#' @param Seuratobj seurat object
-#' @param lognormalized boolean
-#' @param ONLINE boolean
-#' @param xistplots boolean
-#' @param timeout int
+#' @param Seuratobj Seurat object
+#' @param lognormalized boolean, whether input data is log-normalized
+#' @param ONLINE boolean, whether to fetch Y chromosome genes online from EnsDb
+#' @param xistplots boolean, whether to generate diagnostic plots
+#' @param timeout integer, maximum seconds allowed for densityMclust fitting before skipping
+#'
+#' @return A data frame with probability estimates for each cell across the four models
 #' @export
 #' @author Nickolas C. Chu
+
 
 
 femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, timeout = 10 )
