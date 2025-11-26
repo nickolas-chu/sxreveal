@@ -13,7 +13,7 @@
 #' @param lognormalized boolean, whether input data is log-normalized
 #' @param ONLINE boolean, whether to fetch Y chromosome genes online from EnsDb
 #' @param xistplots boolean, whether to generate diagnostic plots
-#' @param timeout integer, maximum seconds allowed for densityMclust fitting before skipping
+#' @param itmax integer, iterations for densityMclust fitting before skipping
 #'
 #' @return A data frame with probability estimates for each cell across the four models
 #' @export
