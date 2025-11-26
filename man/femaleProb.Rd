@@ -11,7 +11,7 @@ femaleProb(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, ti
   \item{lognormalized}{boolean, whether input data is log-normalized}
   \item{ONLINE}{boolean, whether to fetch Y chromosome genes online from EnsDb}
   \item{xistplots}{boolean, whether to generate diagnostic plots}
-  \item{timeout}{integer, maximum seconds allowed for densityMclust fitting before skipping}
+  \item{itmax}{integer, iterations for densityMclust fitting before skipping}
 }
 \description{
 Calculates the probability of cells/nuclei belonging to male or female subjects.
