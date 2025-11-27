@@ -110,11 +110,11 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         truelabels[i] <- current
         if (nrow(newdata) < 5) {
           message("Skipping cluster ", current, " (<5 cells)")
-          next
+          break
         }
         if (n_distinct(newdata$Xist) == 1) {
           message("Skipping cluster ", current, " (Xist constant)")
-          next
+          break
         }
         break
       }else{
@@ -302,7 +302,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       #colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       badclusters<-badclusters + 1
       print('not enough cells have xist or fits failed')
-      next
+      break
     }
     
     
