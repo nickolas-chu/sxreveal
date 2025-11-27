@@ -284,20 +284,20 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
     }else{#fill all columns with 0
-      newdata[['Prob.Uni.1']] <- 0
-      newdata[['Prob.Uni.2']] <- 0
+      newdata[['Prob.Uni.1']] <- NA
+      newdata[['Prob.Uni.2']] <- NA
       colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
       colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
-      newdata[['Prob.Multi.1']] <- 0
-      newdata[['Prob.Multi.2']] <- 0
-      newdata[['Prob.Multi.ncount.1']] <- 0
-      newdata[['Prob.Multi.ncount.2']] <- 0
-      newdata[["Prob.XY.1"]] <- 0
-      newdata[["Prob.XY.2"]] <- 0
+      newdata[['Prob.Multi.1']] <- NA
+      newdata[['Prob.Multi.2']] <- NA
+      newdata[['Prob.Multi.ncount.1']] <- NA
+      newdata[['Prob.Multi.ncount.2']] <- NA
+      newdata[["Prob.XY.1"]] <- NA
+      newdata[["Prob.XY.2"]] <- NA
       colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
       colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
-      colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbFemaleMultinCount"
+      colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
       colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
       colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       badclusters<-badclusters + 1
