@@ -319,15 +319,18 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       proportion = female/k
       ordered$proportionF[[k]] = proportion
     }
-    #add ordered dataframe into a list of dataframes. A dataframe per cluster
-    # Only append if the cluster passed all checks
-    if (!invalid && enoughxist) {
+    # Must be a valid cluster and have at least one probability column present
+    valid_prob_cols <- c("ProbFemaleUni","ProbMaleUni","ProbFemaleMulti","ProbMaleMulti",
+                         "ProbFemaleMultinCount","ProbMaleMultinCount","ProbFemaleXY","ProbMaleXY")
+    
+    has_probs <- any(valid_prob_cols %in% names(ordered))
+    
+    if (!invalid && enoughxist && has_probs) {
       Clusters[[as.character(current)]] <- ordered
     }
-
-
-    
   }
+
+                        
   #Create PDF for the change in female proportion with increasing rna count, per cluster
   if (xistplots == TRUE){
     print(truelabels)
@@ -397,6 +400,21 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     }
     dev.off()
   }
+
+  # Remove NULLs
+  Clusters <- Filter(Negate(is.null), Clusters)
+  
+  # Remove data frames that are effectively empty (all NA in required fields)
+  required_core <- c("Xist","Ygenes","Xgenes","nCount_RNA")
+  Clusters <- Filter(function(df) {
+    is.data.frame(df) &&
+      nrow(df) > 0 &&
+      all(required_core %in% names(df)) &&
+      # not all NA across core columns
+      !all(rowSums(is.na(df[required_core])) == length(required_core))
+  }, Clusters)
+
+                        
   merged <- bind_rows(Clusters, .id = "cluster")
   Clusters <- merged[rownames(Seuratobj@meta.data), ]
   
