@@ -108,7 +108,10 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     for (m in 1:max(levels)) {
       
       if (any (data2$seurat_clusters == current) ){
-        newdata <- subset(data2, select = c("Xist", "Ygenes","Xgenes", "nCount_RNA"), data2$seurat_clusters == current )
+        newdata <- subset(data2,
+                          subset = data2$seurat_clusters == current, 
+                          select = c("Xist", "Ygenes","Xgenes", "nCount_RNA")
+        )
         print("found")
         truelabels[i] <- current
         found<-TRUE
@@ -324,7 +327,9 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
                          "ProbFemaleMultinCount","ProbMaleMultinCount","ProbFemaleXY","ProbMaleXY")
     
     has_probs <- any(valid_prob_cols %in% names(ordered))
-    
+    newdata$cell_id <- rownames(newdata)
+    ordered$cell_id <- rownames(ordered)
+                        
     if (!invalid && enoughxist && has_probs) {
       Clusters[[as.character(current)]] <- ordered
     }
@@ -416,8 +421,8 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
 
                         
   merged <- bind_rows(Clusters, .id = "cluster")
-  Clusters <- merged[rownames(Seuratobj@meta.data), ]
   
-  return(Clusters)
+  
+  return(merged)
 }
 
