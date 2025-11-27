@@ -320,7 +320,11 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       ordered$proportionF[[k]] = proportion
     }
     #add ordered dataframe into a list of dataframes. A dataframe per cluster
-    Clusters[[as.character(current)]] <- ordered
+    # Only append if the cluster passed all checks
+    if (!invalid && enoughxist) {
+      Clusters[[as.character(current)]] <- ordered
+    }
+
 
     
   }
