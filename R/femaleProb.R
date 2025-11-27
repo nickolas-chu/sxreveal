@@ -100,6 +100,9 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     current <- 1 + current
     print (paste("checking for cluster", current))
     
+    found <- FALSE
+    invalid <- FALSE
+    newdata <- NULL
     #Checks for presence of cells belonging to cluster being checked.
     #If found subsets that cluster from the dataframe, otherwise checks next
     for (m in 1:max(levels)) {
@@ -108,12 +111,15 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         newdata <- subset(data2, select = c("Xist", "Ygenes","Xgenes", "nCount_RNA"), data2$seurat_clusters == current )
         print("found")
         truelabels[i] <- current
+        found<-TRUE
         if (nrow(newdata) < 5) {
           message("Skipping cluster ", current, " (<5 cells)")
+          invalid<-TRUE
           break
         }
         if (n_distinct(newdata$Xist) == 1) {
           message("Skipping cluster ", current, " (Xist constant)")
+          invalid<-TRUE
           break
         }
         break
@@ -125,6 +131,8 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       
     }
 
+    if (!found) next
+    if (invalid) { badclusters <- badclusters + 1; next }
     
     #Produce density estimate for uni-variate and multi-variate
 
@@ -174,6 +182,8 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       }
     }else{
       print(paste("less than 2 cells express Xist in cluster", current))
+      badclusters <- badclusters + 1
+      next
     }
     #not clear how mclust chooses to lable each class as 1 or 2, they can switch.
     #So to label the probabilities I use the correlation between probability and
@@ -283,23 +293,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       } else {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
-    }else{#fill all columns with 0
-      #newdata[['Prob.Uni.1']] <- NA
-      #newdata[['Prob.Uni.2']] <- NA
-      #colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
-      #colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
-      #newdata[['Prob.Multi.1']] <- NA
-      #newdata[['Prob.Multi.2']] <- NA
-      #newdata[['Prob.Multi.ncount.1']] <- NA
-      #newdata[['Prob.Multi.ncount.2']] <- NA
-      #newdata[["Prob.XY.1"]] <- NA
-      #newdata[["Prob.XY.2"]] <- NA
-      #colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
-      #colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
-      #colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
-      #colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
-      #colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
-      #colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
+    }else{
       badclusters<-badclusters + 1
       print('not enough cells have xist or fits failed')
       break
