@@ -205,7 +205,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     if (is.logical(stat1) || is.logical(stat2)){
       enoughxist <- FALSE
     }
-    print(enoughxist)
+    
     
     if (enoughxist == TRUE) {
       #A positive correlation indicates the probability is for being female,
@@ -284,24 +284,25 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
     }else{#fill all columns with 0
-      newdata[['Prob.Uni.1']] <- NA
-      newdata[['Prob.Uni.2']] <- NA
-      colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
-      colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
-      newdata[['Prob.Multi.1']] <- NA
-      newdata[['Prob.Multi.2']] <- NA
-      newdata[['Prob.Multi.ncount.1']] <- NA
-      newdata[['Prob.Multi.ncount.2']] <- NA
-      newdata[["Prob.XY.1"]] <- NA
-      newdata[["Prob.XY.2"]] <- NA
-      colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
-      colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
-      colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
-      colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
-      colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
-      colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
+      #newdata[['Prob.Uni.1']] <- NA
+      #newdata[['Prob.Uni.2']] <- NA
+      #colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
+      #colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
+      #newdata[['Prob.Multi.1']] <- NA
+      #newdata[['Prob.Multi.2']] <- NA
+      #newdata[['Prob.Multi.ncount.1']] <- NA
+      #newdata[['Prob.Multi.ncount.2']] <- NA
+      #newdata[["Prob.XY.1"]] <- NA
+      #newdata[["Prob.XY.2"]] <- NA
+      #colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
+      #colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
+      #colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
+      #colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
+      #colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
+      #colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       badclusters<-badclusters + 1
       print('not enough cells have xist or fits failed')
+      next
     }
     
     
