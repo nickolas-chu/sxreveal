@@ -354,11 +354,6 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 1
       } else {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
-    }else{
-      badclusters<-badclusters + 1
-      print('not enough cells have xist or fits failed')
-      break
-    }
 
     if(enoughxist == TRUE |enoughYgenes == TRUE){
       }else{
