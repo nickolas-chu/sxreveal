@@ -257,44 +257,41 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 1
       enoughxist <- FALSE
     }
 
-    
     if (enoughYgenes == TRUE) {
-      #A positive correlation indicates the probability is for being female,
-      #negative is male
+      # A positive correlation indicates the probability is for being female,
+      # negative is male
       print(paste("there is enough Y chrom expression in cluster:", current))
-      #univariate probabilities
-      if (stat1Y$estimate > 0){
+      # univariate probabilities
+      if (!is.null(stat1Y) && !is.na(stat1Y$estimate) && stat1Y$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbMaleUniY"
-      }else{
+      } else if (!is.null(stat1Y) && !is.na(stat1Y$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbFemaleUniY"
       }
-      
-      if (stat2Y$estimate > 0){
+    
+      if (!is.null(stat2Y) && !is.na(stat2Y$estimate) && stat2Y$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbMaleUniY"
-      }else{
+      } else if (!is.null(stat2Y) && !is.na(stat2Y$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbFemaleUniY"
       }
-      
     }
     
-    
     if (enoughxist == TRUE) {
-      #A positive correlation indicates the probability is for being female,
-      #negative is male
+      # A positive correlation indicates the probability is for being female,
+      # negative is male
       print(paste("there is enough Xist in cluster:", current))
-      #univariate probabilities
-      if (stat1$estimate > 0){
+      # univariate probabilities
+      if (!is.null(stat1) && !is.na(stat1$estimate) && stat1$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbFemaleUni"
-      }else{
+      } else if (!is.null(stat1) && !is.na(stat1$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Uni.1")] <- "ProbMaleUni"
       }
-      
-      if (stat2$estimate > 0){
+    
+      if (!is.null(stat2) && !is.na(stat2$estimate) && stat2$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbFemaleUni"
-      }else{
+      } else if (!is.null(stat2) && !is.na(stat2$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Uni.2")] <- "ProbMaleUni"
       }
-      
+    
       if (!is.null(dens2)) {
         newdata[['Prob.Multi.1']] <- dens2$z[,1]
         newdata[['Prob.Multi.2']] <- dens2$z[,2]
@@ -309,60 +306,67 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 1
         newdata[['Prob.Multi.ncount.1']] <- 0
         newdata[['Prob.Multi.ncount.2']] <- 0
       }
-        if (!is.null(dens4)) {
+      if (!is.null(dens4)) {
         newdata[["Prob.XY.1"]] <- dens4$z[,1]
         newdata[["Prob.XY.2"]] <- dens4$z[,2]
       } else {
         newdata[["Prob.XY.1"]] <- 0
         newdata[["Prob.XY.2"]] <- 0
       }
-      
+    
       stat3 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.1), error=function(e) NULL)
       stat4 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.2), error=function(e) NULL)
       stat5 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.ncount.1), error=function(e) NULL)
       stat6 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.Multi.ncount.2), error=function(e) NULL)
       stat7 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.XY.1), error=function(e) NULL)
       stat8 <- tryCatch(cor.test(newdata$Xist, newdata$Prob.XY.2), error=function(e) NULL)
-      
-      if (!is.null(stat3) && stat3$estimate > 0){
+    
+      if (!is.null(stat3) && !is.na(stat3$estimate) && stat3$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbFemaleMulti"
-      } else {
+      } else if (!is.null(stat3) && !is.na(stat3$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.1")] <- "ProbMaleMulti"
       }
-      if (!is.null(stat4) && stat4$estimate > 0){
+    
+      if (!is.null(stat4) && !is.na(stat4$estimate) && stat4$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbFemaleMulti"
-      } else {
+      } else if (!is.null(stat4) && !is.na(stat4$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.2")] <- "ProbMaleMulti"
       }
-      if (!is.null(stat5) && stat5$estimate > 0){
+    
+      if (!is.null(stat5) && !is.na(stat5$estimate) && stat5$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbFemaleMultinCount"
-      } else {
+      } else if (!is.null(stat5) && !is.na(stat5$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.1")] <- "ProbMaleMultinCount"
       }
-      if (!is.null(stat6) && stat6$estimate > 0){
+    
+      if (!is.null(stat6) && !is.na(stat6$estimate) && stat6$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbFemaleMultinCount"
-      } else {
+      } else if (!is.null(stat6) && !is.na(stat6$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.Multi.ncount.2")] <- "ProbMaleMultinCount"
       }
-      if (!is.null(stat7) && stat7$estimate > 0) {
+    
+      if (!is.null(stat7) && !is.na(stat7$estimate) && stat7$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbFemaleXY"
-      } else {
+      } else if (!is.null(stat7) && !is.na(stat7$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.1")] <- "ProbMaleXY"
       }
-      if (!is.null(stat8) && stat8$estimate > 0) {
+    
+      if (!is.null(stat8) && !is.na(stat8$estimate) && stat8$estimate > 0) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbFemaleXY"
-      } else {
+      } else if (!is.null(stat8) && !is.na(stat8$estimate)) {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
     }
-
-    if(enoughxist == TRUE |enoughYgenes == TRUE){
-    }else{
+    
+    if (enoughxist == TRUE | enoughYgenes == TRUE) {
+      # ok
+    } else {
       print('not enough cells have xist or fits failed')
       break
     }
     
-    
+        
+        
     
     #Determine at which value of ncount, the proportion of female cells stops changing
     max = 0
