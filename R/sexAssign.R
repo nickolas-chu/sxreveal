@@ -11,48 +11,57 @@
 #' @param malecut selected probability of being female used to assign males
 #' @export
 #' @author Nickolas C. Chu
-sexAssign <- function(Probabilities, femalecut = 0.8, malecut = 0.2)
-{
+sexAssign <- function(Probabilities, femalecut = 0.8, malecut = 0.2) {
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleXY[i] >= femalecut) {
+    val <- Probabilities$ProbFemaleXY[i]
+    if (!is.na(val) && val >= femalecut) {
       Probabilities[["SexMultiXY"]][i] <- "female"
-    }
-    else if (Probabilities$ProbFemaleXY[i] <= malecut) {
+    } else if (!is.na(val) && val <= malecut) {
       Probabilities[["SexMultiXY"]][i] <- "male"
-    }
-    else {
+    } else {
       Probabilities[["SexMultiXY"]][i] <- "soup"
     }
   }
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleMulti[i] >= femalecut) {
+    val <- Probabilities$ProbFemaleUniY[i]
+    if (!is.na(val) && val >= femalecut) {
+      Probabilities[["SexUniY"]][i] <- "female"
+    } else if (!is.na(val) && val <= malecut) {
+      Probabilities[["SexUniY"]][i] <- "male"
+    } else {
+      Probabilities[["SexUniY"]][i] <- "soup"
+    }
+  }
+  for (i in 1:nrow(Probabilities)) {
+    val <- Probabilities$ProbFemaleMulti[i]
+    if (!is.na(val) && val >= femalecut) {
       Probabilities[['SexMulti']][i] <- "female"
-    }else if(Probabilities$ProbFemaleMulti[i] <= malecut) {
+    } else if (!is.na(val) && val <= malecut) {
       Probabilities[['SexMulti']][i] <- "male"
-    }else {
+    } else {
       Probabilities[['SexMulti']][i] <- "soup"
     }
   }
-  #uni
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleUni[i] >= femalecut) {
-      Probabilities[['SexUni']][i] <- "female"
-    }else if(Probabilities$ProbFemaleUni[i] <= malecut) {
-      Probabilities[['SexUni']][i] <- "male"
-    }else {
-      Probabilities[['SexUni']][i] <- "soup"
+    val <- Probabilities$ProbFemaleUni[i]
+    if (!is.na(val) && val >= femalecut) {
+      Probabilities[['SexUniX']][i] <- "female"
+    } else if (!is.na(val) && val <= malecut) {
+      Probabilities[['SexUniX']][i] <- "male"
+    } else {
+      Probabilities[['SexUniX']][i] <- "soup"
     }
   }
-  #multincount
   for (i in 1:nrow(Probabilities)) {
-    if (Probabilities$ProbFemaleMultinCount[i] >= femalecut) {
+    val <- Probabilities$ProbFemaleMultinCount[i]
+    if (!is.na(val) && val >= femalecut) {
       Probabilities[['SexMultinCount']][i] <- "female"
-    }else if(Probabilities$ProbFemaleMultinCount[i] <= malecut) {
+    } else if (!is.na(val) && val <= malecut) {
       Probabilities[['SexMultinCount']][i] <- "male"
-    }else {
+    } else {
       Probabilities[['SexMultinCount']][i] <- "soup"
     }
   }
   return(Probabilities)
-
 }
+
