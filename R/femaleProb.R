@@ -356,10 +356,10 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 1
       }
 
     if(enoughxist == TRUE |enoughYgenes == TRUE){
-      }else{
+    }else{
       print('not enough cells have xist or fits failed')
       break
-      }
+    }
     
     
     
