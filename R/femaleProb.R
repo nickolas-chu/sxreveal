@@ -103,6 +103,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     found <- FALSE
     invalid <- FALSE
     newdata <- NULL
+    constant_x <-FALSE
     #Checks for presence of cells belonging to cluster being checked.
     #If found subsets that cluster from the dataframe, otherwise checks next
     for (m in 1:max(levels)) {
@@ -122,8 +123,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         }
         if (n_distinct(newdata$Xist) == 1) {
           message("Skipping cluster ", current, " (Xist constant)")
-          invalid<-TRUE
-          break
+          constant_x <-TRUE
         }
         break
       }else{
@@ -139,7 +139,22 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     
     #Produce density estimate for uni-variate and multi-variate
 
-    if (NROW(newdata$Xist[newdata$Xist > 0]) >= 2) {
+    
+    if (NROW(newdata$Ygenes[newdata$Ygenes > 0]) >= 2) {
+      densY <- tryCatch({
+        densityMclust(newdata$Ygenes, G = 2, plot = FALSE,
+                      control = emControl(itmax = itmax))
+      }, error = function(e) {
+        message("Cluster ", current, ": densY failed - ", e$message)
+        NULL
+      }) 
+      if (!is.null(densY)) {
+        newdata[["Prob.UniY.1"]] <- densY$z[,1]
+        newdata[["Prob.UniY.2"]] <- densY$z[,2]
+      }
+    }
+
+    if (NROW(newdata$Xist[newdata$Xist > 0]) >= 2 & constant_x == FALSE) {
       dens1 <- tryCatch({
         densityMclust(newdata$Xist, G = 2, plot = FALSE,
                       control = emControl(itmax = itmax))
@@ -180,13 +195,40 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
         plot_list0_titles[[i-badclusters]] <- current
         newdata[["Prob.Uni.1"]] <- dens1$z[,1]
         newdata[["Prob.Uni.2"]] <- dens1$z[,2]
-      } else {
-        next
       }
     }else{
       print(paste("less than 2 cells express Xist in cluster", current))
       badclusters <- badclusters + 1
-      next
+    }
+    enoughYgenes <- TRUE
+    if(!is.null(densY)) {
+      stat1Y <- tryCatch(
+        {stat1<- cor.test(newdata$Ygenes, newdata$Prob.UniY.1)
+        },
+        error=function(e) {
+          message('An Error Occurred, check number of Y chrom expressing cells')
+          print(e)
+          enoughYgenes <- FALSE
+          return(enoughYgenes)
+          
+        }
+      )
+      stat2Y <- tryCatch(
+        {stat2<- cor.test(newdata$Ygenes, newdata$Prob.UniY.2)
+        },
+        error=function(e) {
+          message('An Error Occurred, check number of Y chrom expressing cells')
+          print(e)
+          enoughYgenes <- FALSE
+          return(enoughYgenes)
+          
+        }
+      )
+
+    if (is.logical(stat1Y) || is.logical(stat2Y)){
+      enoughYgenes <- FALSE
+    }
+
     }
     #not clear how mclust chooses to lable each class as 1 or 2, they can switch.
     #So to label the probabilities I use the correlation between probability and
@@ -217,6 +259,25 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     )
     if (is.logical(stat1) || is.logical(stat2)){
       enoughxist <- FALSE
+    }
+    
+    if (enoughYgenes == TRUE) {
+      #A positive correlation indicates the probability is for being female,
+      #negative is male
+      print(paste("there is enough Y chrom expression in cluster:", current))
+      #univariate probabilities
+      if (stat1$estimate > 0){
+        colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbMaleUniY"
+      }else{
+        colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbFemaleUniY"
+      }
+      
+      if (stat2$estimate > 0){
+        colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbMaleUniY"
+      }else{
+        colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbFemaleUniY"
+      }
+      
     }
     
     
@@ -301,6 +362,12 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       print('not enough cells have xist or fits failed')
       break
     }
+
+    if(enoughxist == TRUE |enoughYgenes == TRUE){
+      }else{
+      print('not enough cells have xist or fits failed')
+      break
+      }
     
     
     
@@ -324,13 +391,13 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     }
     # Must be a valid cluster and have at least one probability column present
     valid_prob_cols <- c("ProbFemaleUni","ProbMaleUni","ProbFemaleMulti","ProbMaleMulti",
-                         "ProbFemaleMultinCount","ProbMaleMultinCount","ProbFemaleXY","ProbMaleXY")
+                         "ProbFemaleMultinCount","ProbMaleMultinCount","ProbFemaleXY","ProbMaleXY", "ProbMaleUniY", "ProbFemaleUniY")
     
     has_probs <- any(valid_prob_cols %in% names(ordered))
     newdata$cell_id <- rownames(newdata)
     ordered$cell_id <- rownames(ordered)
                         
-    if (!invalid && enoughxist && has_probs) {
+    if (!invalid && (enoughxist || enoughYgenes) && has_probs) {
       Clusters[[as.character(current)]] <- ordered
     }
   }
