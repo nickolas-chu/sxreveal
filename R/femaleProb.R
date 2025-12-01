@@ -234,32 +234,29 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
     #So to label the probabilities I use the correlation between probability and
     #Xist expression
     enoughxist <- TRUE
-    #determine correlation of Xist expression to probability
-    stat1 <- tryCatch(
-      {stat1<- cor.test(newdata$Xist, newdata$Prob.Uni.1)
-      },
-      error=function(e) {
-        message('An Error Occurred, check number of Xist expressing cells')
-        print(e)
-        enoughxist <- FALSE
-        return(enoughxist)
-        
-      }
-    )
-    stat2 <- tryCatch(
-      {stat2<- cor.test(newdata$Xist, newdata$Prob.Uni.2)
-      },
-      error=function(e) {
-        message('An Error Occurred, check number of Xist expressing cells')
-        print(e)
-        enoughxist <- FALSE
-        return(enoughxist)
-        
-      }
-    )
-    if (is.logical(stat1) || is.logical(stat2)){
+    
+    # Only run cor.test if the probability columns exist and are numeric
+    stat1 <- if ("Prob.Uni.1" %in% names(newdata) && is.numeric(newdata$Prob.Uni.1)) {
+      tryCatch(cor.test(newdata$Xist, newdata$Prob.Uni.1),
+               error = function(e) {
+                 message("Cluster ", current, ": cor.test on Prob.Uni.1 failed - ", e$message)
+                 NULL
+               })
+    } else NULL
+    
+    stat2 <- if ("Prob.Uni.2" %in% names(newdata) && is.numeric(newdata$Prob.Uni.2)) {
+      tryCatch(cor.test(newdata$Xist, newdata$Prob.Uni.2),
+               error = function(e) {
+                 message("Cluster ", current, ": cor.test on Prob.Uni.2 failed - ", e$message)
+                 NULL
+               })
+    } else NULL
+    
+    # If either correlation failed, mark as not enough Xist
+    if (is.null(stat1) || is.null(stat2)) {
       enoughxist <- FALSE
     }
+
     
     if (enoughYgenes == TRUE) {
       #A positive correlation indicates the probability is for being female,
