@@ -21,7 +21,7 @@
 
 
 
-femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots = FALSE, itmax = 100 )
+femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 100 )
 {
   set.seed(1234)
   nCount_RNA <- NULL
@@ -263,13 +263,13 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
       #negative is male
       print(paste("there is enough Y chrom expression in cluster:", current))
       #univariate probabilities
-      if (stat1$estimate > 0){
+      if (stat1Y$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbMaleUniY"
       }else{
         colnames(newdata)[which(names(newdata) == "Prob.UniY.1")] <- "ProbFemaleUniY"
       }
       
-      if (stat2$estimate > 0){
+      if (stat2Y$estimate > 0){
         colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbMaleUniY"
       }else{
         colnames(newdata)[which(names(newdata) == "Prob.UniY.2")] <- "ProbFemaleUniY"
@@ -400,75 +400,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, xistplots
   }
 
                         
-  #Create PDF for the change in female proportion with increasing rna count, per cluster
-  if (xistplots == TRUE){
-    print(truelabels)
-    pdf(file = 'Proportion_Expressing_Xist.pdf')
-    plot_list1 = list()
-    noxist = 0
-    for (N in 1:length(Clusters)){
-      tempclust = Clusters[[N]]
-      if(NROW(tempclust$Xist[tempclust$Xist >= 2])){
-        hasxist<- N - noxist
-        colnames(tempclust)[10] <- 'proportionF'
-        p1 = ggplot(tempclust, aes(x = nCount_RNA, y = proportionF))+
-          geom_point()+
-          ggtitle(paste0("Cluster", truelabels[N]))
-        plot_list1[[hasxist]] = p1
-      }else{
-        noxist <- noxist + 1
-      }
-    }
-    for (i in 1:length(plot_list1)) {
-      print(plot_list1[[i]])
-    }
-    dev.off()
-    #create a list of histograms for Xist expression per cluster
-    plot_list2 = list()
-    for (N in 1:length(Clusters)){
-      tempclust = Clusters[[N]]
-      colnames(tempclust)[1] <- 'Xist'
-      p2 = ggplot(tempclust, aes(x=Xist)) +
-        geom_histogram(binwidth = 0.05) +
-        #xlim(-1,NA)+
-        #scale_x_continuous(limits = c(0,NA))+
-        #scale_y_continuous()+
-        ggtitle(paste0("Cluster", truelabels[N]))
-      plot_list2[[N]] = p2
-      
-    }
-    #create a PDF for the histograms for each cluster
-    pdf(file = 'Xist_hist.pdf')
-    for (i in 1:length(plot_list2)) {
-      print(plot_list2[[i]])
-    }
-    dev.off()
-    #Get number of clusters minus clusters with 2 < Xist expressing cells
-    goodclusters<-  length(plot_list2) - badclusters
-    #print PDF combining the ordered Xist expression proportions and Xist histograms
-    pdf(file = 'combined.pdf')
-    for(i in 1:goodclusters){
-      current = plot_list0_titles[[i]]
-      VAR1=plot_list0[[i]]
-      VAR2=plot_list1[[i]]
-      
-      if(lognormalized == TRUE){
-        bin_width <-0.05
-      }
-      else{
-        bin_width <- 0.5
-      }
-      
-      nbins <- seq(min(VAR1$data) - bin_width,
-                   max(VAR1$data) + bin_width,
-                   by = bin_width)
-      
-      plot(VAR2)
-      plot(VAR1, what = "density", data =  VAR1$data, breaks = nbins , main = paste("Cluster", current, sep = " "), xlab = 'Xist' )
-      
-    }
-    dev.off()
-  }
+ 
 
   # Remove NULLs
   Clusters <- Filter(Negate(is.null), Clusters)
