@@ -354,6 +354,7 @@ femaleProb <- function(Seuratobj, lognormalized = TRUE, ONLINE = TRUE, itmax = 1
       } else {
         colnames(newdata)[which(names(newdata) == "Prob.XY.2")] <- "ProbMaleXY"
       }
+    }
 
     if(enoughxist == TRUE |enoughYgenes == TRUE){
     }else{
